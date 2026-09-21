@@ -173,6 +173,32 @@ Search_Knowledge_Base 59, Web_Search 5. End-to-end contains-gold 0.672 (from 0.0
 to the knowledge base 0.729, against the retrieval stack's 0.734 ceiling. The remaining
 gap to the ceiling is the pipeline's own verification and generation path, not routing.
 
+## Model comparison — qwen2.5:3b vs llama3.2 (3B), 2026-09-21
+
+Same harness, same 64 questions, same retrieval stack; only `LLM_MODEL` changes
+(`LLM_MODEL=llama3.2 sh eval/run_all.sh llama32`). The ablation rows are the like-for-like
+comparison; the routing suite exercises the classifier on the cases the rules do not cover.
+
+| measure | qwen2.5:3b | llama3.2 |
+|---|---|---|
+| routing, strict accuracy (rules + classifier, 3 runs) | 0.969 | **1.000** |
+| routing, unstable cases | 0 | 0 |
+| model alone, contains-gold | 0.031 | 0.016 |
+| hybrid + rerank, contains-gold | **0.734** | 0.656 |
+| hybrid + rerank, token-F1 | 0.295 | **0.371** |
+| hybrid + rerank, lexical support | **0.761** | 0.694 |
+| hybrid + rerank, seconds per answer | **4.7** | 7.4 |
+| answers suite, judge PASS rate | 0.906* | 0.922 |
+
+\* the qwen answers-suite run predates hybrid retrieval (dense + rerank); the ablation rows above
+are the fair comparison.
+
+Reading: llama3.2 routes marginally better (the one qwen miss is the chart case the guard
+corrects anyway) and writes terser answers that overlap the gold more word for word, but it
+drops the gold fact more often (0.656 vs 0.734) and takes about 1.6× longer. On this task
+qwen2.5:3b stays the default. Neither model can answer from memory alone (≤ 0.03), which is the
+retrieval stack's justification in one line.
+
 ## Not yet measured
 
 - Latency distribution over many requests (traces.jsonl accumulates; one request is not a benchmark).
